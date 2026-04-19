@@ -52,3 +52,15 @@ class ImpactLog(Base):
     notes = Column(String, nullable=True)
     photo_url = Column(String, nullable=True)
     verified_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class AdminUser(Base):
+    __tablename__ = "admin_users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_approved = Column(Boolean, default=False, nullable=False)  # needs approval from existing admin
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
