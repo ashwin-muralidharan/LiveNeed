@@ -1,7 +1,30 @@
+# Dependencies
 node_modules/
 venv/
+.env
+
+# Python
 __pycache__/
+*.pyc
 .pytest_cache/
+
+# Build output
 dist/
+
+# Database
 *.db
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# AI tooling
 .kiro/
+
+# Test artifacts
+*.test_output.txt
+impact_test_output.txt
