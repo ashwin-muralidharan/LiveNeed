@@ -17,23 +17,29 @@ export default function Admin() {
   const [needs, setNeeds] = useState([]);
   const [volunteers, setVolunteers] = useState([]);
   const [pendingAdmins, setPendingAdmins] = useState([]);
+  const [adminList, setAdminList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingStatus, setEditingStatus] = useState(null);
   const [editingVol, setEditingVol] = useState(null);
   const addToast = useToast();
   const { admin, authHeaders, logout } = useAuth();
 
+  const SUPER_ADMIN_EMAILS = ["maneesh@gmail.com", "ashwin@gmail.com"];
+  const isSuperAdmin = admin && SUPER_ADMIN_EMAILS.includes(admin.email);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [n, v, p] = await Promise.all([
+      const [n, v, p, a] = await Promise.all([
         api.get("/admin/needs", { headers: authHeaders }),
         api.get("/admin/volunteers", { headers: authHeaders }),
         api.get("/auth/pending", { headers: authHeaders }),
+        api.get("/auth/admins", { headers: authHeaders }),
       ]);
       setNeeds(n.data);
       setVolunteers(v.data);
       setPendingAdmins(p.data);
+      setAdminList(a.data);
     } catch (err) {
       addToast("Failed to load admin data", "error");
     } finally { setLoading(false); }
@@ -105,6 +111,16 @@ export default function Admin() {
     } catch (err) { addToast("Failed to reject", "error"); }
   };
 
+  // --- Admin delete actions ---
+  const handleDeleteAdmin = async (targetAdmin) => {
+    if (!window.confirm(`Remove admin ${targetAdmin.name} (${targetAdmin.email})? This cannot be undone.`)) return;
+    try {
+      await api.delete(`/auth/admins/${targetAdmin.id}`, { headers: authHeaders });
+      addToast(`${targetAdmin.name} removed from admin list`);
+      fetchData();
+    } catch (err) { addToast(err.response?.data?.detail || "Failed to delete admin", "error"); }
+  };
+
   const urgencyColor = (s) => s >= 70 ? "text-rose-400" : s >= 40 ? "text-amber-400" : "text-emerald-400";
 
   return (
@@ -130,6 +146,7 @@ export default function Admin() {
           { key: "needs", label: "Needs", count: needs.length, icon: "📋" },
           { key: "volunteers", label: "Volunteers", count: volunteers.length, icon: "👥" },
           { key: "approvals", label: "Approvals", count: pendingAdmins.length, icon: "🔐" },
+          { key: "admins", label: "Admins", count: adminList.length, icon: "🛡️" },
         ].map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -362,6 +379,85 @@ export default function Admin() {
                 </div>
               ))}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* =================== ADMINS TAB =================== */}
+      {!loading && tab === "admins" && (
+        <div className="glass-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium text-xs uppercase tracking-wider">ID</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium text-xs uppercase tracking-wider">Admin</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium text-xs uppercase tracking-wider">Email</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium text-xs uppercase tracking-wider">Role</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium text-xs uppercase tracking-wider">Joined</th>
+                  {isSuperAdmin && (
+                    <th className="text-right py-3 px-4 text-gray-500 font-medium text-xs uppercase tracking-wider">Actions</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {adminList.map((a) => (
+                  <tr key={a.id} className={`border-b border-white/5 hover:bg-white/[0.03] transition-colors ${a.id === admin?.admin_id ? "bg-brand-500/[0.05]" : ""}`}>
+                    <td className="py-3 px-4 text-gray-400 font-mono text-xs">#{a.id}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0 ${
+                          a.is_super
+                            ? "bg-gradient-to-br from-amber-500 to-orange-600"
+                            : "bg-gradient-to-br from-brand-500 to-purple-600"
+                        }`}>
+                          {a.name?.charAt(0) || "?"}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-medium">{a.name}</span>
+                          {a.id === admin?.admin_id && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-brand-500/20 text-brand-300 border border-brand-500/20">You</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-gray-400 text-xs">{a.email}</td>
+                    <td className="py-3 px-4">
+                      {a.is_super ? (
+                        <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium">
+                          ⭐ Super Admin
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-xs font-medium">
+                          Admin
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-gray-400 text-xs">
+                      {a.created_at ? new Date(a.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "—"}
+                    </td>
+                    {isSuperAdmin && (
+                      <td className="py-3 px-4 text-right">
+                        {!a.is_super && a.id !== admin?.admin_id ? (
+                          <button onClick={() => handleDeleteAdmin(a)}
+                            className="p-1.5 rounded-lg hover:bg-rose-500/20 text-gray-500 hover:text-rose-400 transition-all"
+                            title={`Remove ${a.name}`}>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                          </button>
+                        ) : (
+                          <span className="text-gray-600 text-xs">—</span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {adminList.length === 0 && (
+            <div className="py-12 text-center text-gray-500">No admins found.</div>
           )}
         </div>
       )}
