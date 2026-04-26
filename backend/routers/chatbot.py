@@ -9,6 +9,7 @@ Endpoint:
   POST /chat  – send a message, get an AI response
 """
 
+import os
 import json
 import time
 from datetime import datetime
@@ -29,7 +30,7 @@ router = APIRouter(prefix="/chat", tags=["chatbot"])
 # ---------------------------------------------------------------------------
 # ⚠️  PASTE YOUR GEMINI API KEY HERE  ⚠️
 # ---------------------------------------------------------------------------
-GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 # ---------------------------------------------------------------------------
 
 genai.configure(api_key=GEMINI_API_KEY)
