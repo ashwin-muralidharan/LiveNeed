@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_db
-from routers import needs, matching, impact, volunteers, assignments, admin, auth
+from routers import needs, matching, impact, volunteers, assignments, admin, auth, chatbot
 
 
 @asynccontextmanager
@@ -38,4 +38,5 @@ app.include_router(volunteers.router)
 app.include_router(assignments.router)
 app.include_router(admin.router)
 app.include_router(auth.router)
+app.include_router(chatbot.router)
 

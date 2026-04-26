@@ -7,6 +7,7 @@ import AdminLogin from "./pages/AdminLogin.jsx";
 import AdminRegister from "./pages/AdminRegister.jsx";
 import { ToastProvider } from "./components/Toast.jsx";
 import { AuthProvider, useAuth } from "./components/AuthContext.jsx";
+import ChatWidget from "./components/ChatWidget.jsx";
 import { useState } from "react";
 
 const NAV_LINKS = [
@@ -153,6 +154,9 @@ export default function App() {
                 </p>
               </div>
             </footer>
+
+            {/* Gemini AI Chat Widget */}
+            <ChatWidget />
           </div>
         </BrowserRouter>
       </AuthProvider>

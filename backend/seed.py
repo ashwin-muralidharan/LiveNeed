@@ -123,8 +123,12 @@ def seed():
         existing_users = db.query(User).count()
 
         if existing_needs > 0 or existing_users > 0:
-            print(f"Database already has {existing_needs} needs and {existing_users} users. Clearing for fresh Render start.")
-            # Clear existing data without asking
+            print(f"Database already has {existing_needs} needs and {existing_users} users.")
+            response = input("Clear and re-seed? (y/N): ").strip().lower()
+            if response != "y":
+                print("Aborted.")
+                return
+            # Clear existing data
             db.query(Need).delete()
             db.query(User).delete()
             db.commit()
